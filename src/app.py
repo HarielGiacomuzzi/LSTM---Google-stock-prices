@@ -13,7 +13,7 @@ numberOfPastSteps = 60
 numberOfIndicators = 1
 
 # Import the training set
-dataset_train = pd.read_csv('../dataset/Google_Stock_Price_Test.csv')
+dataset_train = pd.read_csv('/Users/hariel.dias/Desktop/Hariel/Deep Learning/RNN/dataset/Google_Stock_Price_Train.csv')
 
 # gets only the opening prices and returns as a np array
 training_set = dataset_train.iloc[:, 1:2].values
@@ -46,3 +46,40 @@ regressor = Sequential()
 # input_shape only needs to know the time steps and the number of indicators, the other dimension is automatically expected
 regressor.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], numberOfIndicators)))
 regressor.add(Dropout(0.2))
+
+# layer 2
+regressor.add(LSTM(units=50, return_sequences=True))
+regressor.add(Dropout(0.2))
+
+# layer 3
+regressor.add(LSTM(units=50, return_sequences=True))
+regressor.add(Dropout(0.2))
+
+# layer 4
+# since the next layer is not a LSTM then the return_sequences is not needed
+regressor.add(LSTM(units=50, return_sequences=False))
+regressor.add(Dropout(0.2))
+
+# output layer
+regressor.add(Dense(units=1))
+
+# compile the model
+regressor.compile(optimizer='adam', loss='mean_squared_error')
+
+# epochs --> number of times it will go throug the entire training set
+# batch_size --> number of observations befor updating the weights
+regressor.fit(x_train,y_train, epochs=100, verbose=1, batch_size=32)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
