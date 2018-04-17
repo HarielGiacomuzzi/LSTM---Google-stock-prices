@@ -70,12 +70,53 @@ regressor.compile(optimizer='adam', loss='mean_squared_error')
 # batch_size --> number of observations befor updating the weights
 regressor.fit(x_train,y_train, epochs=100, verbose=1, batch_size=32)
 
+#
+# Visualizing results
+#
 
+# Getting the real values of the Stock prices
+dataset_test = pd.read_csv('/Users/hariel.dias/Desktop/Hariel/Deep Learning/RNN/dataset/Google_Stock_Price_Test.csv')
+# gettign only the open value
+real_data = dataset_train.iloc[:, 1:2].values
 
+# Getting the predicted values for the 30 next steps
+dataset_total = pd.concat((dataset_train['Open'], dataset_test['Open']), axis=0)
+inputs = dataset_total[len(dataset_total) - len(dataset_test) - numberOfPastSteps : ].values
 
+# set it to the shape of lines and one column
+inputs = inputs.reshape(-1, 1)
 
+# scale the inputs as we scaled for training...
+# remember that part of it is already transformed, so just need to use the transform insted of the fit_transform
+inputs = scaler.transform(inputs)
 
+# set it to the correct 3D structure
+x_test = []
 
+for i in range(numberOfPastSteps, len(inputs)):
+    x_test.append(inputs[i-numberOfPastSteps:i, 0])
+
+x_test = np.array(x_test)
+
+x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], numberOfIndicators))
+
+# getting the predictions finally
+preds = regressor.predict(x_test)
+
+# now inverse the scaled values to the "normal" values
+preds = scaler.inverse_transform(preds)
+
+#
+# Creating a graph with the real values and the predicted ones
+#
+
+plt.plot(real_data, color='blue', label='Real Data')
+plt.plot(preds, color='orange', label='Predicted Data')
+plt.title('Google Stock Price Prediction')
+plt.xlabel('Time')
+plt.ylabel('Price')
+plt.legend()
+plt.show()
 
 
 
