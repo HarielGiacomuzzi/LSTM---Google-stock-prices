@@ -4,6 +4,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import LSTM
+from keras.layers import Dropout
+
 numberOfPastSteps = 60
 numberOfIndicators = 1
 
@@ -32,3 +37,12 @@ y_train = np.array(y_train)
 # reshape the arrays for the correct input as we can see in the input shapes section of Keras docs of recurrent layers
 # (batch_size, timesteps, input_dims) --> (number of observations, timesteps, indicators)
 x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], numberOfIndicators))
+
+
+# Building the RNN
+regressor = Sequential()
+
+# return_sequences is set since we are adding another stack of LSTM in the output of this layer
+# input_shape only needs to know the time steps and the number of indicators, the other dimension is automatically expected
+regressor.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], numberOfIndicators)))
+regressor.add(Dropout(0.2))
