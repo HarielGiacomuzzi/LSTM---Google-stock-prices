@@ -44,20 +44,24 @@ regressor = Sequential()
 
 # return_sequences is set since we are adding another stack of LSTM in the output of this layer
 # input_shape only needs to know the time steps and the number of indicators, the other dimension is automatically expected
-regressor.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], numberOfIndicators)))
+regressor.add(LSTM(units=60, return_sequences=True, input_shape=(x_train.shape[1], numberOfIndicators)))
 regressor.add(Dropout(0.2))
 
 # layer 2
-regressor.add(LSTM(units=50, return_sequences=True))
+regressor.add(LSTM(units=60, return_sequences=True))
 regressor.add(Dropout(0.2))
 
 # layer 3
-regressor.add(LSTM(units=50, return_sequences=True))
+regressor.add(LSTM(units=60, return_sequences=True))
+regressor.add(Dropout(0.2))
+
+# layer 3
+regressor.add(LSTM(units=60, return_sequences=True))
 regressor.add(Dropout(0.2))
 
 # layer 4
 # since the next layer is not a LSTM then the return_sequences is not needed
-regressor.add(LSTM(units=50, return_sequences=False))
+regressor.add(LSTM(units=60, return_sequences=False))
 regressor.add(Dropout(0.2))
 
 # output layer
@@ -68,7 +72,7 @@ regressor.compile(optimizer='adam', loss='mean_squared_error')
 
 # epochs --> number of times it will go throug the entire training set
 # batch_size --> number of observations befor updating the weights
-regressor.fit(x_train,y_train, epochs=100, verbose=1, batch_size=32)
+regressor.fit(x_train,y_train, epochs=120, verbose=1, batch_size=32)
 
 #
 # Visualizing results
@@ -77,11 +81,11 @@ regressor.fit(x_train,y_train, epochs=100, verbose=1, batch_size=32)
 # Getting the real values of the Stock prices
 dataset_test = pd.read_csv('/Users/hariel.dias/Desktop/Hariel/Deep Learning/RNN/dataset/Google_Stock_Price_Test.csv')
 # gettign only the open value
-real_data = dataset_train.iloc[:, 1:2].values
+real_data = dataset_test.iloc[:, 1:2].values
 
 # Getting the predicted values for the 30 next steps
 dataset_total = pd.concat((dataset_train['Open'], dataset_test['Open']), axis=0)
-inputs = dataset_total[len(dataset_total) - len(dataset_test) - numberOfPastSteps : ].values
+inputs = dataset_total[len(dataset_total) - len(dataset_test) - numberOfPastSteps:].values
 
 # set it to the shape of lines and one column
 inputs = inputs.reshape(-1, 1)
@@ -93,12 +97,12 @@ inputs = scaler.transform(inputs)
 # set it to the correct 3D structure
 x_test = []
 
-for i in range(numberOfPastSteps, len(inputs)):
-    x_test.append(inputs[i-numberOfPastSteps:i, 0])
+for i in range(60, 80):
+    x_test.append(inputs[i-60:i, 0])
 
 x_test = np.array(x_test)
 
-x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], numberOfIndicators))
+x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
 
 # getting the predictions finally
 preds = regressor.predict(x_test)
