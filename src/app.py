@@ -9,6 +9,8 @@ from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Dropout
 
+from keras.callbacks import ModelCheckpoint
+
 numberOfPastSteps = 60
 numberOfIndicators = 1
 
@@ -27,7 +29,7 @@ x_train = []
 y_train = []
 
 for i in range(numberOfPastSteps, len(training_set_scaled)):
-    x_train.append(training_set_scaled[i-numberOfPastSteps:i, 0])
+    x_train.append(training_set_scaled[i-numberOfPastSteps:i, 0:2])
     y_train.append(training_set_scaled[i, 0])
 
 # transforms the datastructures to np arrays
@@ -45,24 +47,24 @@ regressor = Sequential()
 # return_sequences is set since we are adding another stack of LSTM in the output of this layer
 # input_shape only needs to know the time steps and the number of indicators, the other dimension is automatically expected
 regressor.add(LSTM(units=60, return_sequences=True, input_shape=(x_train.shape[1], numberOfIndicators)))
-regressor.add(Dropout(0.2))
+# regressor.add(Dropout(0.2))
 
 # layer 2
 regressor.add(LSTM(units=60, return_sequences=True))
-regressor.add(Dropout(0.2))
+# regressor.add(Dropout(0.2))
 
 # layer 3
 regressor.add(LSTM(units=60, return_sequences=True))
-regressor.add(Dropout(0.2))
+# regressor.add(Dropout(0.2))
 
 # layer 3
 regressor.add(LSTM(units=60, return_sequences=True))
-regressor.add(Dropout(0.2))
+# regressor.add(Dropout(0.2))
 
 # layer 4
 # since the next layer is not a LSTM then the return_sequences is not needed
 regressor.add(LSTM(units=60, return_sequences=False))
-regressor.add(Dropout(0.2))
+# regressor.add(Dropout(0.2))
 
 # output layer
 regressor.add(Dense(units=1))
@@ -70,16 +72,29 @@ regressor.add(Dense(units=1))
 # compile the model
 regressor.compile(optimizer='adam', loss='mean_squared_error')
 
+# create a callback to save the model weights
+checkpoint_callback = ModelCheckpoint(filepath='./checkpoint/weights.hdf5',
+                                      monitor='loss',
+                                      mode='min',
+                                      verbose=1,
+                                      save_best_only=True)
+
+regressor.load_weights(filepath='./checkpoint/weights.hdf5');
+
 # epochs --> number of times it will go throug the entire training set
 # batch_size --> number of observations befor updating the weights
-regressor.fit(x_train,y_train, epochs=120, verbose=1, batch_size=32)
+regressor.fit(x_train,y_train,
+              epochs=10,
+              verbose=1,
+              batch_size=32,
+              callbacks=[checkpoint_callback])
 
 #
 # Visualizing results
 #
 
 # Getting the real values of the Stock prices
-dataset_test = pd.read_csv('/Users/hariel.dias/Desktop/Hariel/Deep Learning/RNN/dataset/Google_Stock_Price_Test.csv')
+dataset_test = pd.read_csv('/Users/hariel.dias/Desktop/Hariel/Deep Learning/RNN/dataset/Google_Stock_Price_Train.csv')
 # gettign only the open value
 real_data = dataset_test.iloc[:, 1:2].values
 
@@ -97,7 +112,7 @@ inputs = scaler.transform(inputs)
 # set it to the correct 3D structure
 x_test = []
 
-for i in range(60, 80):
+for i in range(60, len(inputs)):
     x_test.append(inputs[i-60:i, 0])
 
 x_test = np.array(x_test)
